@@ -1,4 +1,4 @@
-# 💡 Data Insight API (with Google Gemini)
+#  Data Insight API (with Google Gemini)
 
 A powerful, lightweight Data Analysis API built with Flask and Google Gemini. This tool empowers users to have a conversation with their data. Upload datasets (CSV, ZIP, or Text files) and ask natural language questions to instantly extract insights, perform calculations, and get specific data points without writing a single line of code.
 
@@ -16,7 +16,7 @@ The API follows a simple yet powerful workflow to turn your data and questions i
 5.  **Get Answer**: The request is sent to the Gemini API, which returns a precise, data-driven answer.
 6.  **Return JSON**: The final answer is sent back to the user in a clean JSON format.
 
-## 🚀 Features
+##  Features
 
 - **Natural Language Querying:** Ask questions in plain English (e.g., "What is the average value in column X?") and get precise answers.
 - **Multi-Format Support:** Automatically handles and extracts data from:
@@ -27,14 +27,14 @@ The API follows a simple yet powerful workflow to turn your data and questions i
 - **LLM Integration:** Leverages **Google Gemini** to understand the data's structure and your question, providing intelligent and context-aware responses.
 - **Simple RESTful Architecture:** A clean, single-endpoint design that is easy to integrate into any frontend application, script, or automation workflow (like Postman).
 
-## 🎯 Use Cases
+##  Use Cases
 
 - **Interactive Data Chatbots**: Build a user-friendly chatbot that allows non-technical users to query company data.
 - **Automated Reporting**: Integrate the API into a script to automatically generate daily summaries or answer recurring business questions.
 - **Data Exploration for Analysts**: Quickly get high-level statistics or validate hypotheses without writing complex scripts.
 - **Educational Tools**: Create applications that help students learn data analysis concepts by interacting with datasets in natural language.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Backend:** Python, Flask
 - **AI/LLM:** Google Gemini API (`gemini-1.5-flash`)
@@ -46,7 +46,7 @@ The API follows a simple yet powerful workflow to turn your data and questions i
 - Python 3.8+
 - A **Google Gemini API Key**. You can get one from Google AI Studio.
 
-## 🔧 Installation & Local Development
+##  Installation & Local Development
 
 1. **Clone the repository**
    ```bash
