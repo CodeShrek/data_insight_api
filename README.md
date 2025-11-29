@@ -136,3 +136,12 @@ curl -X POST http://127.0.0.1:8000/api/ \
   "answer": "30"
 }
 ```
+
+
+You can also view live Demo on - https://codeshrek.pythonanywhere.com/
+this site is functional till-   Saturday 28 February 2026
+
+
+
+
+###ENJOY
