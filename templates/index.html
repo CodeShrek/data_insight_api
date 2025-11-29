@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Insight AI</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; display: none; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Data Insight AI</h1>
+        <p style="text-align: center; color: #666;">Upload a CSV or Text file and ask Gemini a question.</p>
+        
+        <div class="form-group">
+            <label>1. Upload File (CSV/TXT)</label>
+            <input type="file" id="fileInput">
+        </div>
+        
+        <div class="form-group">
+            <label>2. Ask a Question</label>
+            <input type="text" id="questionInput" placeholder="e.g., What is the average value?">
+        </div>
+
+        <button onclick="askAI()">Analyze Data</button>
+        <div class="loader" id="loader"></div>
+
+        <div id="result">
+            <strong>🤖 AI Answer:</strong>
+            <p id="answerText"></p>
+        </div>
+    </div>
+
+    <script>
+        async function askAI() {
+            const fileInput = document.getElementById('fileInput');
+            const question = document.getElementById('questionInput').value;
+            const resultDiv = document.getElementById('result');
+            const answerText = document.getElementById('answerText');
+            const loader = document.getElementById('loader');
+
+            if (!question) { alert("Please enter a question!"); return; }
+
+            // Show loading
+            loader.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('question', question);
+            if (fileInput.files[0]) {
+                formData.append('file', fileInput.files[0]);
+            }
+
+            try {
+                const response = await fetch('/api/', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                loader.style.display = 'none';
+                resultDiv.style.display = 'block';
+                
+                if (data.error) {
+                    answerText.innerText = "Error: " + data.error;
+                    answerText.style.color = "red";
+                } else {
+                    answerText.innerText = data.answer;
+                    answerText.style.color = "black";
+                }
+            } catch (error) {
+                loader.style.display = 'none';
+                alert("Failed to connect to API");
+            }
+        }
+    </script>
+</body>
+</html>

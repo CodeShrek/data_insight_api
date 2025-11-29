@@ -5,7 +5,7 @@ import pandas as pd
 import tempfile
 import io
 import google.generativeai as genai
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
@@ -117,8 +117,7 @@ def process_file(file):
 def get_llm_response(question, file_data=None):
     """Send the question and data context to Gemini."""
     try:
-        # --- CRITICAL CHANGE HERE ---
-        # Using the model we confirmed is available in your list
+        # Using the model confirmed available
         model = genai.GenerativeModel("gemini-2.5-flash")
         
         # System Prompt
@@ -144,7 +143,7 @@ def get_llm_response(question, file_data=None):
 
 @app.route('/api/', methods=['POST'])
 def solve_question():
-    """Main API Endpoint"""
+    """Main API Endpoint used by the frontend"""
     try:
         # 1. Get Question
         question = request.form.get('question')
@@ -167,12 +166,9 @@ def solve_question():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/', methods=['GET'])
-def health_check():
-    return jsonify({
-        "status": "online", 
-        "service": "Data Insight API (Gemini)",
-        "model": "gemini-2.5-flash" # Updated label
-    })
+def index():
+    """Serves the Frontend UI"""
+    return render_template('index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
