@@ -3,58 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Insight AI</title>
+    <title>Data Insight Generator</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
-        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; }
-        button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        #result { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; display: none; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; margin: 10px auto; }
+        /* Apple.com-inspired Font Stack and Professional Light Theme */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fbfbfb; /* Very light grey background */
+            color: #1d1d1f; /* Dark grey text for readability */
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); /* Softer, modern shadow */
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1d1d1f;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #86868b;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #1d1d1f;
+        }
+
+        /* Custom File Input Styling */
+        .file-upload-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-upload-label {
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            border: 1px solid #d2d2d7;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+
+        .file-upload-label:hover {
+            background-color: #e8e8ed;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #fileNameDisplay {
+            color: #86868b;
+            font-size: 14px;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            box-sizing: border-box; /* Prevents padding from affecting width */
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #0071e3; /* Apple blue focus state */
+        }
+
+        .analyze-button {
+            background-color: #0071e3; /* Apple blue */
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 17px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .analyze-button:hover {
+            background-color: #0077ed;
+        }
+
+        .analyze-button:disabled {
+            background-color: #a1a1a6;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f5f5f7;
+            border-radius: 12px;
+            display: none;
+            border-left: 4px solid #0071e3;
+        }
+
+        #result strong {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        #answerText {
+            white-space: pre-wrap; /* Preserves line breaks from AI */
+            color: #1d1d1f;
+        }
+
+        .loader-container {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        /* Simple, clean spinner */
+        .loader {
+            border: 3px solid #e0e0e0;
+            border-top: 3px solid #86868b;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px auto;
+        }
+
+        .loading-text {
+            color: #86868b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Data Insight AI</h1>
-        <p style="text-align: center; color: #666;">Upload a CSV or Text file and ask Gemini a question.</p>
+        <h1>Data Insight Generator</h1>
+        <p class="subtitle">Upload a dataset and use AI to uncover insights instantly.</p>
         
+        <div class="section-title">Data Source</div>
         <div class="form-group">
-            <label>1. Upload File (CSV/TXT)</label>
-            <input type="file" id="fileInput">
+            <label>Select File (CSV, TXT, ZIP)</label>
+            <div class="file-upload-container">
+                <label for="fileInput" class="file-upload-label">Choose File</label>
+                <input type="file" id="fileInput" accept=".csv,.txt,.zip">
+                <span id="fileNameDisplay">No file chosen</span>
+            </div>
         </div>
         
+        <div class="section-title">Analysis Request</div>
         <div class="form-group">
-            <label>2. Ask a Question</label>
-            <input type="text" id="questionInput" placeholder="e.g., What is the average value?">
+            <label for="questionInput">Your Question</label>
+            <input type="text" id="questionInput" placeholder="e.g., What is the main trend in this data?">
         </div>
 
-        <button onclick="askAI()">Analyze Data</button>
-        <div class="loader" id="loader"></div>
+        <button class="analyze-button" onclick="askAI()" id="analyzeBtn">Generate Insight</button>
+        
+        <div class="loader-container" id="loaderContainer">
+            <div class="loader"></div>
+            <div class="loading-text">Processing data and generating insight...</div>
+        </div>
 
         <div id="result">
-            <strong>🤖 AI Answer:</strong>
+            <strong>Analysis Result</strong>
             <p id="answerText"></p>
         </div>
     </div>
 
     <script>
+        // Improve file input UX
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : "No file chosen";
+            document.getElementById('fileNameDisplay').textContent = fileName;
+        });
+
         async function askAI() {
             const fileInput = document.getElementById('fileInput');
-            const question = document.getElementById('questionInput').value;
+            const questionInput = document.getElementById('questionInput');
             const resultDiv = document.getElementById('result');
             const answerText = document.getElementById('answerText');
-            const loader = document.getElementById('loader');
+            const loaderContainer = document.getElementById('loaderContainer');
+            const analyzeBtn = document.getElementById('analyzeBtn');
 
-            if (!question) { alert("Please enter a question!"); return; }
+            const question = questionInput.value.trim();
 
-            // Show loading
-            loader.style.display = 'block';
+            if (!question) {
+                alert("Please enter a question to proceed.");
+                questionInput.focus();
+                return;
+            }
+
+            // UI State: Loading
+            analyzeBtn.disabled = true;
+            loaderContainer.style.display = 'block';
             resultDiv.style.display = 'none';
+            answerText.style.color = "#1d1d1f";
 
             const formData = new FormData();
             formData.append('question', question);
@@ -67,23 +256,34 @@
                     method: 'POST',
                     body: formData
                 });
+                
                 const data = await response.json();
                 
-                loader.style.display = 'none';
+                // UI State: Finished
+                loaderContainer.style.display = 'none';
+                analyzeBtn.disabled = false;
                 resultDiv.style.display = 'block';
                 
                 if (data.error) {
-                    answerText.innerText = "Error: " + data.error;
-                    answerText.style.color = "red";
+                    answerText.textContent = "Error: " + data.error;
+                    answerText.style.color = "#d70015"; // Apple system red for errors
+                    resultDiv.style.borderLeftColor = "#d70015";
                 } else {
-                    answerText.innerText = data.answer;
-                    answerText.style.color = "black";
+                    answerText.textContent = data.answer;
+                    resultDiv.style.borderLeftColor = "#0071e3"; // Reset to blue on success
                 }
+
             } catch (error) {
-                loader.style.display = 'none';
-                alert("Failed to connect to API");
+                // UI State: Network Error
+                loaderContainer.style.display = 'none';
+                analyzeBtn.disabled = false;
+                resultDiv.style.display = 'block';
+                answerText.textContent = "Failed to connect to the server. Please try again later.";
+                answerText.style.color = "#d70015";
+                resultDiv.style.borderLeftColor = "#d70015";
             }
         }
     </script>
 </body>
 </html>
+<!--this isn't written by me just AI generated, so dont stress about it -->
