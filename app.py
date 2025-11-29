@@ -3,187 +3,176 @@ import zipfile
 import json
 import pandas as pd
 import tempfile
+import io
+import google.generativeai as genai
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
-import openai
 from dotenv import load_dotenv
 
-# Load environment variables
+# 1. Load environment variables
 load_dotenv()
 
-# Set up API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# 2. Configure Gemini API
+API_KEY = os.getenv("GEMINI_API_KEY")
+if not API_KEY:
+    print(" ERROR: GEMINI_API_KEY not found in .env file")
+else:
+    genai.configure(api_key=API_KEY)
 
 app = Flask(__name__)
-
-# Set up temporary directory for file processing
 TEMP_DIR = tempfile.gettempdir()
 
+def analyze_dataframe(df):
+    """
+    Generates a statistical summary of the data so the AI 
+    understands the whole dataset, not just the top rows.
+    """
+    buffer = io.StringIO()
+    df.info(buf=buffer)
+    info_str = buffer.getvalue()
+    
+    # Create a rich summary
+    summary = {
+        "columns": df.columns.tolist(),
+        "shape": df.shape, # (rows, columns)
+        "column_types": str(df.dtypes.to_dict()),
+        "missing_values": df.isnull().sum().to_dict(),
+        "statistics": df.describe(include='all').to_dict(), # Mean, min, max, count
+        "sample_data": df.head(20).to_dict(orient="records") # First 20 rows
+    }
+    return summary
+
 def process_file(file):
-    """Process uploaded file and extract relevant information."""
+    """Process uploaded file (ZIP, CSV, TXT) and extract insights."""
     if not file:
         return None
     
     filename = secure_filename(file.filename)
     file_path = os.path.join(TEMP_DIR, filename)
-    
-    # Save the file temporarily
     file.save(file_path)
     
-    file_content = None
-    file_info = {
-        "filename": filename,
-        "content": None
-    }
+    extracted_data = []
     
     try:
-        # Process ZIP files
+        # --- HANDLE ZIP FILES ---
         if filename.endswith('.zip'):
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                # Extract all files to temporary directory
                 extract_dir = os.path.join(TEMP_DIR, 'extracted')
                 os.makedirs(extract_dir, exist_ok=True)
                 zip_ref.extractall(extract_dir)
                 
-                # Process extracted files
-                extracted_files = []
-                for root, dirs, files in os.walk(extract_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        if file.endswith('.csv'):
+                # Walk through extracted files
+                for root, _, files in os.walk(extract_dir):
+                    for f_name in files:
+                        full_path = os.path.join(root, f_name)
+                        
+                        # Process CSV inside ZIP
+                        if f_name.endswith('.csv'):
                             try:
-                                df = pd.read_csv(file_path)
-                                file_info["content"] = {
+                                df = pd.read_csv(full_path)
+                                extracted_data.append({
+                                    "filename": f_name,
                                     "type": "csv",
-                                    "columns": df.columns.tolist(),
-                                    "sample": df.head(5).to_dict(orient="records"),
-                                    "shape": df.shape
-                                }
-                                
-                                # Check if 'answer' column exists
-                                if 'answer' in df.columns:
-                                    file_info["answer_column"] = df['answer'].tolist()
-                                
-                                extracted_files.append(file_info)
+                                    "analysis": analyze_dataframe(df)
+                                })
                             except Exception as e:
-                                extracted_files.append({
-                                    "filename": file,
-                                    "error": str(e)
+                                extracted_data.append({"filename": f_name, "error": str(e)})
+                        
+                        # Process TXT inside ZIP
+                        elif f_name.endswith('.txt'):
+                            with open(full_path, 'r', encoding='utf-8') as f:
+                                extracted_data.append({
+                                    "filename": f_name, 
+                                    "type": "text", 
+                                    "content": f.read()[:10000] # Limit text size
                                 })
-                        elif file.endswith('.txt'):
-                            with open(file_path, 'r', encoding='utf-8') as f:
-                                content = f.read()
-                                extracted_files.append({
-                                    "filename": file,
-                                    "type": "text",
-                                    "content": content
-                                })
-                return extracted_files
-        
-        # Process CSV files directly
+                                
+        # --- HANDLE DIRECT CSV ---
         elif filename.endswith('.csv'):
             df = pd.read_csv(file_path)
-            file_info["content"] = {
+            extracted_data.append({
+                "filename": filename,
                 "type": "csv",
-                "columns": df.columns.tolist(),
-                "sample": df.head(5).to_dict(orient="records"),
-                "shape": df.shape
-            }
+                "analysis": analyze_dataframe(df)
+            })
             
-            # Check if 'answer' column exists
-            if 'answer' in df.columns:
-                file_info["answer_column"] = df['answer'].tolist()
-            
-            return [file_info]
-        
-        # Process text files
+        # --- HANDLE DIRECT TEXT ---
         elif filename.endswith('.txt'):
             with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                file_info["content"] = {
+                extracted_data.append({
+                    "filename": filename,
                     "type": "text",
-                    "content": content
-                }
-            return [file_info]
-        
-        else:
-            file_info["content"] = {
-                "type": "unknown",
-                "message": "Unsupported file type"
-            }
-            return [file_info]
+                    "content": f.read()[:10000]
+                })
+                
+        return extracted_data
     
     except Exception as e:
-        return [{
-            "filename": filename,
-            "error": str(e)
-        }]
+        return [{"error": f"File processing failed: {str(e)}"}]
     finally:
-        # Clean up
+        # Cleanup uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
 
 def get_llm_response(question, file_data=None):
-    """Get response from LLM based on the question and file data."""
+    """Send the question and data context to Gemini."""
     try:
-        # Prepare the message for the LLM
-        messages = [
-            {"role": "system", "content": "You are an AI assistant helping with data science assignments. Your task is to provide precise, concise answers to questions. If the question involves analyzing data from a file, extract the exact answer requested. Return only the answer value, with no explanations or additional text."}
-        ]
+        # --- CRITICAL CHANGE HERE ---
+        # Using the model we confirmed is available in your list
+        model = genai.GenerativeModel("gemini-2.5-flash")
         
-        # Add the question
-        user_message = f"Question: {question}\n"
-        
-        # Add file data if available
-        if file_data:
-            user_message += f"\nFile data: {json.dumps(file_data, indent=2)}\n"
-        
-        user_message += "\nPlease provide ONLY the answer value, with no explanations. The answer should be in a format that can be directly entered into an assignment submission field."
-        
-        messages.append({"role": "user", "content": user_message})
-        
-        # Get response from OpenAI
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # or another appropriate model
-            messages=messages
+        # System Prompt
+        prompt = (
+            "You are an expert Data Analyst. "
+            "I will provide you with a question and a summary of a dataset (including statistics, schema, and samples). "
+            "Use the 'statistics' (mean, max, min) to answer aggregation questions accurately. "
+            "Do NOT explain the process. Return ONLY the final answer value (number or string)."
+            "\n\n"
         )
         
-        # Extract the answer from the response
-        answer = response.choices[0].message['content'].strip()
-        return answer
+        prompt += f"USER QUESTION: {question}\n"
+        
+        if file_data:
+            prompt += f"\nDATA CONTEXT:\n{json.dumps(file_data, indent=2)}\n"
+            
+        # Generate Answer
+        response = model.generate_content(prompt)
+        return response.text.strip()
     
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"AI Error: {str(e)}"
 
 @app.route('/api/', methods=['POST'])
 def solve_question():
-    """Main API endpoint to process questions and return answers."""
+    """Main API Endpoint"""
     try:
-        # Get the question from the request
+        # 1. Get Question
         question = request.form.get('question')
         if not question:
             return jsonify({"error": "No question provided"}), 400
         
-        # Check if a file was uploaded
+        # 2. Process File (if provided)
         file_data = None
         if 'file' in request.files:
             file = request.files['file']
-            if file.filename:  # Check if a file was actually selected
+            if file.filename:
                 file_data = process_file(file)
         
-        # Get answer from LLM
+        # 3. Ask Gemini
         answer = get_llm_response(question, file_data)
         
-        # Return the answer in the required format
         return jsonify({"answer": answer})
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Add a simple health check endpoint
 @app.route('/', methods=['GET'])
 def health_check():
-    return jsonify({"status": "healthy", "message": "TDS Solver API is running"})
+    return jsonify({
+        "status": "online", 
+        "service": "Data Insight API (Gemini)",
+        "model": "gemini-2.5-flash" # Updated label
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))

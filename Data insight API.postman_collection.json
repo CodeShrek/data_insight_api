@@ -1,0 +1,148 @@
+{
+	"info": {
+		"_postman_id": "efe7f430-b85b-4c9b-9b25-a78daeae87dd",
+		"name": "Data insight API",
+		"description": "This collection verfies the functioning of Data Insight API as an data anlaysis tool for dataset , in this we have verified various aspects of the tool , one by one (cross validating its functioning).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "45508455",
+		"_collection_link": "https://shriyam-3947885.postman.co/workspace/bd8bcdb9-1d00-47f9-859b-c2adce2c6574/collection/45508455-efe7f430-b85b-4c9b-9b25-a78daeae87dd?action=share&source=collection_link&creator=45508455"
+	},
+	"item": [
+		{
+			"name": "get- check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://127.0.0.1:8000/"
+			},
+			"response": []
+		},
+		{
+			"name": "without file",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response has the required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData).to.have.property('answer');",
+							"});",
+							"",
+							"",
+							"pm.test(\"Answer is a string\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.answer).to.be.a('string');",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response content type is application/json\", function () {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include(\"application/json\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "question",
+							"value": "what is 2*1/165*2+6",
+							"type": "text"
+						}
+					]
+				},
+				"url": "http://127.0.0.1:8000/api/"
+			},
+			"response": []
+		},
+		{
+			"name": "Other questions",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "question",
+							"value": "what are you doing?",
+							"type": "text"
+						}
+					]
+				},
+				"url": "http://127.0.0.1:8000/api/"
+			},
+			"response": []
+		},
+		{
+			"name": "dataset_analysis_1",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "question",
+							"value": "what is the average age ?",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "postman-cloud:///1f0cd133-8320-4400-8b6e-f910a7cf474c"
+						}
+					]
+				},
+				"url": "http://127.0.0.1:8000/api/"
+			},
+			"response": []
+		},
+		{
+			"name": "dataset_analysis_2",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "question",
+							"value": "what is the details of person with maximum age ?",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "postman-cloud:///1f0cd133-8320-4400-8b6e-f910a7cf474c"
+						}
+					]
+				},
+				"url": "http://127.0.0.1:8000/api/"
+			},
+			"response": []
+		}
+	]
+}
